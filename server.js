@@ -14,8 +14,31 @@ const MODEL   = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5'; // fast + che
 
 const CATS = ['Home','Work','Ideas','Medical','Fitness','Groceries','Family'];
 
+// NOTE: keep this prompt in sync with PARSE_PROMPT in public/index.html (the
+// in-workspace fallback). Same rules, same output schema.
 const prompt = (today, note) =>
-`Today is ${today}. Convert this note into to-do tasks as a JSON array. Split lists (e.g. groceries, errands) into separate tasks. Pick 0+ categories per task from: ${CATS.join(', ')}. due = YYYY-MM-DD only if a day is implied, else null. time = HH:MM only if stated, else null. recurring = Daily/Weekly/Monthly or null. No em dashes. Output ONLY a JSON array like [{"text":"","categories":[],"due":null,"time":null,"recurring":null}]
+`Today is ${today}. The note below is raw spoken or typed input and may be messy. Turn it into a clean JSON array of to-do tasks.
+
+Rules:
+- Clean the speech: remove filler ("um", "uh", "like", "you know") and obvious transcription noise. Do not invent tasks that were not said.
+- Honor verbal corrections: if the speaker retracts or changes something ("scratch that", "no wait", "actually make it...", "I mean..."), apply the correction and drop the retracted part.
+- Write each task as a short imperative title, e.g. "Call dentist", "Buy milk". No filler, no first-person preamble ("I need to", "I was thinking").
+- Split run-ons and lists (groceries, errands, multiple intents) into separate tasks.
+- categories: assign one or more best-fit categories per task from this exact list, using the exact strings: ${CATS.join(', ')}. Leave categories empty ONLY if none genuinely fit.
+- due = YYYY-MM-DD only if a day is implied; resolve relative dates ("friday", "tomorrow", "next week") against today's date. Else null.
+- time = HH:MM (24-hour) only if a time is stated, else null. Attach a time to the specific task it was said for, not all of them.
+- recurring = Daily, Weekly, or Monthly if implied ("every monday" -> Weekly), else null.
+- No em dashes anywhere.
+
+Output ONLY a JSON array, no prose, like:
+[{"text":"","categories":[],"due":null,"time":null,"recurring":null}]
+
+Examples:
+Input: "um grab milk and uh eggs, scratch that just milk"
+Output: [{"text":"Buy milk","categories":["Groceries"],"due":null,"time":null,"recurring":null}]
+Input: "i was thinking call the dentist at 3 and i should hit the gym every monday"
+Output: [{"text":"Call dentist","categories":["Medical"],"due":null,"time":"15:00","recurring":null},{"text":"Go to the gym","categories":["Fitness"],"due":null,"time":null,"recurring":"Weekly"}]
+
 Note: "${note}"`;
 
 function extractJsonArray(s){
