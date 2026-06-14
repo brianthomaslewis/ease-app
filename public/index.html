@@ -165,8 +165,9 @@
   .catopt { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 7px; border: 1px solid var(--line-2); color: var(--ink-3); background: var(--surface); transition: .12s; }
   .draft .draft-del { float: right; font-size: 12px; font-weight: 600; color: var(--ink-3); }
   .draft .draft-del:hover { color: oklch(0.55 0.16 25); }
-  .draft-x { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: var(--ink-3); font-size: 17px; line-height: 1; z-index: 2; }
-  .draft-x:hover { background: var(--line); color: var(--ink); }
+  .draft-x { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-2); font-size: 18px; line-height: 1; z-index: 2; background: var(--line); transition: background .12s, color .12s; }
+  .draft-x:hover { background: var(--line-2); color: var(--ink); }
+  .draft.has-x textarea { padding-right: 34px; }
   .sheet-f { padding: 16px 22px 20px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); }
   .btn { padding: 12px 18px; border-radius: 11px; font-size: 14px; font-weight: 700; transition: .15s; }
   .btn-primary { background: var(--accent); color: #fff; flex: 1; box-shadow: 0 3px 10px oklch(0.56 0.07 152 / 0.25); }
@@ -497,7 +498,7 @@ function ReviewSheet({ drafts, setDrafts, onConfirm, onClose }){
         <button className="sheet-x" onClick={onClose} aria-label="close">&times;</button>
         <div className="sheet-b" style={{paddingTop:44}}>
           {drafts.map((d,i)=> (
-            <div className="draft edit-module" key={d.id}
+            <div className={'draft edit-module'+(multi?' has-x':'')} key={d.id}
               style={{ background:'none', position:'relative',
                 border: multi? '1px solid var(--line-2)' : 'none',
                 borderRadius: multi? 14 : 0,
@@ -562,30 +563,29 @@ function Capture({ onDrafts, onManual }){
     if(cancel){ recRef.current=null; r.onend=null; try{ r.stop(); }catch(e){} setPhase('idle'); setLive(''); return; }
     try{ r.stop(); }catch(e){}
   }
-  function micDown(){
-    if(phase!=='idle') return;
+  function toggleRec(){
+    if(phase==='parsing') return;
+    if(phase==='recording'){ stopRec(false); return; }
     if(!supportsSR){ setErr('Voice input is not supported in this browser. Type your task instead.'); document.getElementById('cap-input')?.focus(); return; }
     startRec();
-    const up=()=>{ window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); stopRec(false); };
-    window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up);
   }
 
   return (
     <div>
       <div className="capture">
         <input id="cap-input" value={text}
-          placeholder={supportsSR? 'Hold the mic to speak, or type a task\u2026' : 'Type in plain words, e.g. \u201cdentist friday 3pm\u201d'}
+          placeholder={supportsSR? 'Tap the mic to speak, or type a task\u2026' : 'Type in plain words, e.g. \u201cdentist friday 3pm\u201d'}
           onChange={e=>setText(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') runParse(text); }} disabled={phase!=='idle'} />
         <button className="cap-add" onClick={onManual} aria-label="add a task by hand" title="Add a task by hand"><I.plus s={20} /></button>
-        <button className={'mic'+(phase==='recording'?' rec':'')} onPointerDown={(e)=>{ e.preventDefault(); micDown(); }} onContextMenu={(e)=>e.preventDefault()} aria-label="hold to speak"><I.mic s={20} /></button>
+        <button className={'mic'+(phase==='recording'?' rec':'')} onClick={toggleRec} aria-label={phase==='recording'?'stop recording':'tap to speak'}><I.mic s={20} /></button>
       </div>
 
       {phase==='idle' && err && <div className="cap-hint" style={{color:'oklch(0.56 0.13 45)'}}>{err}</div>}
       {phase==='recording' && (
         <div className="reclive">
-          <div className="lbl"><span className="bigwave"><span></span><span></span><span></span><span></span><span></span></span> Listening, release to sort</div>
-          <div className={'txt'+(live?'':' ph')}>{live || 'Keep holding and say what you need to do\u2026 e.g. \u201cgrab milk, eggs and spinach tomorrow, and call the dentist friday at 3\u201d'}</div>
-          <button className="rec-stop" onClick={()=>stopRec(false)}>Release to sort</button>
+          <div className="lbl"><span className="bigwave"><span></span><span></span><span></span><span></span><span></span></span> Listening\u2026 tap Stop when done</div>
+          <div className={'txt'+(live?'':' ph')}>{live || 'Say what you need to do\u2026 e.g. \u201cgrab milk, eggs and spinach tomorrow, and call the dentist friday at 3\u201d'}</div>
+          <button className="rec-stop" onClick={()=>stopRec(false)}>Stop &amp; sort</button>
         </div>
       )}
     </div>
