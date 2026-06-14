@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="ease-parse-endpoint" content="/api/parse" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ease</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: oklch(0.984 0.008 85);
+    --surface: oklch(0.997 0.003 85);
+    --ink: oklch(0.27 0.012 70);
+    --ink-2: oklch(0.27 0.012 70 / 0.62);
+    --ink-3: oklch(0.27 0.012 70 / 0.42);
+    --line: oklch(0.27 0.012 70 / 0.11);
+    --line-2: oklch(0.27 0.012 70 / 0.18);
+    --accent: oklch(0.56 0.07 152);
+    --accent-deep: oklch(0.46 0.07 152);
+    --accent-soft: oklch(0.56 0.07 152 / 0.10);
+    --accent-line: oklch(0.56 0.07 152 / 0.32);
+    --radius: 14px;
+    --shadow: 0 1px 2px oklch(0.3 0.02 70 / 0.05), 0 10px 30px oklch(0.3 0.02 70 / 0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input, select, textarea { font-family: inherit; }
+  ::selection { background: var(--accent-soft); }
+
+  .wrap { max-width: 740px; margin: 0 auto; padding: 34px 22px 120px; }
+
+  /* header */
+  .hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 26px; }
+  .brand { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+  .brand .mark { font-weight: 800; font-size: 27px; letter-spacing: -0.6px; color: var(--ink); }
+  .brand .date { font-size: 13px; color: var(--ink-3); font-weight: 500; white-space: nowrap; }
+  .cal-btn { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); padding: 7px 12px; border-radius: 100px; border: 1px solid var(--line-2); background: var(--surface); transition: .15s; }
+  .cal-btn:hover { border-color: var(--accent-line); color: var(--accent-deep); }
+  .cal-btn .dotg { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+  .cal-btn.on .dotg { background: var(--accent); }
+
+  /* capture */
+  .capture { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 8px 8px 8px 18px; display: flex; align-items: center; gap: 10px; transition: .18s; }
+  .capture:focus-within { border-color: var(--accent-line); }
+  .capture input { flex: 1; border: none; outline: none; background: none; font-size: 15.5px; color: var(--ink); padding: 12px 0; min-width: 0; }
+  .capture input::placeholder { color: var(--ink-3); }
+  .mic { width: 44px; height: 44px; border-radius: 12px; background: var(--accent); color: #fff; display: grid; place-items: center; flex: none; transition: .15s; box-shadow: 0 3px 10px oklch(0.56 0.07 152 / 0.30); }
+  .mic:hover { transform: translateY(-1px); }
+  .mic.rec { background: oklch(0.55 0.16 25); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%{ box-shadow: 0 0 0 0 oklch(0.55 0.16 25 / 0.40);} 70%{ box-shadow: 0 0 0 12px oklch(0.55 0.16 25 / 0);} 100%{ box-shadow: 0 0 0 0 oklch(0.55 0.16 25 / 0);} }
+  .cap-hint { font-size: 12px; color: var(--ink-3); margin: 9px 4px 0; display: flex; align-items: center; gap: 6px; }
+  .cap-add { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); display: grid; place-items: center; flex: none; transition: .15s; }
+  .cap-add:hover { border-color: var(--accent-line); color: var(--accent-deep); }
+
+  /* recording / parsing strip */
+  .reclive { margin-top: 12px; background: var(--surface); border: 1px solid var(--accent-line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .reclive .lbl { font-size: 11.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--accent-deep); display: flex; align-items: center; gap: 9px; }
+  .reclive .txt { font-size: 15.5px; line-height: 1.45; margin-top: 10px; color: var(--ink); min-height: 22px; }
+  .reclive .txt.ph { color: var(--ink-3); }
+  .bigwave { display: inline-flex; align-items: center; gap: 3px; height: 14px; }
+  .bigwave span { width: 3px; border-radius: 3px; background: currentColor; animation: wv 1.05s ease-in-out infinite; }
+  .bigwave span:nth-child(1){height:6px;animation-delay:0s}.bigwave span:nth-child(2){height:13px;animation-delay:.1s}.bigwave span:nth-child(3){height:9px;animation-delay:.2s}.bigwave span:nth-child(4){height:14px;animation-delay:.3s}.bigwave span:nth-child(5){height:7px;animation-delay:.4s}
+  @keyframes wv { 0%,100%{transform:scaleY(.45)} 50%{transform:scaleY(1)} }
+  .spin { width: 14px; height: 14px; border: 2px solid var(--accent-line); border-top-color: var(--accent); border-radius: 50%; animation: sp .7s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .rec-stop { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #fff; background: oklch(0.55 0.16 25); padding: 9px 16px; border-radius: 100px; }
+
+  /* tabs */
+  .tabs { display: flex; margin: 26px 0 18px; border-bottom: 1px solid var(--line); }
+  .tab { display: inline-flex; align-items: center; gap: 7px; padding: 11px 4px; margin-right: 22px; font-size: 14.5px; font-weight: 600; color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: .15s; }
+  .tab:hover { color: var(--ink-2); }
+  .tab.on { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab .cnt { font-size: 11.5px; font-weight: 700; color: var(--ink-3); background: var(--line); padding: 1px 7px; border-radius: 100px; min-width: 18px; text-align: center; }
+  .tab.on .cnt { color: var(--accent-deep); background: var(--accent-soft); }
+
+  /* filter bar */
+  .filterbar { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 16px; align-items: center; }
+  .fb-all { font-size: 12px; font-weight: 700; padding: 5px 13px; border-radius: 100px; border: 1px solid var(--line-2); color: var(--ink-2); background: var(--surface); transition: .12s; }
+  .fb-all:hover { border-color: var(--ink-3); }
+  .fb-all.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .fchip { font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 100px; cursor: pointer; transition: .12s; }
+  .fchip.off { background: var(--surface); border: 1px solid var(--line-2); color: var(--ink-3); }
+  .fchip.off:hover { color: var(--ink-2); border-color: var(--ink-3); }
+  .tag-btn { cursor: pointer; transition: filter .12s; }
+  .tag-btn:hover { filter: brightness(0.97); }
+  .tbody { cursor: pointer; }
+  .btn-danger { color: oklch(0.55 0.16 25); margin-right: auto; }
+  .btn-danger:hover { background: oklch(0.55 0.16 25 / 0.08); }
+  .mic { -webkit-user-select: none; user-select: none; touch-action: none; }
+
+  /* day groups + tasks */
+  .daygroup { margin-bottom: 8px; }
+  .dayadd { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); padding: 9px 6px; margin-top: 2px; border-radius: 8px; opacity: 0.45; transition: opacity .12s, color .12s; }
+  .daygroup:hover .dayadd, .dayadd:hover { opacity: 1; }
+  .dayadd:hover { color: var(--accent-deep); }
+  .daylabel { display: flex; align-items: baseline; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ink-3); margin: 22px 0 6px; }
+  .daylabel .dl-main { color: var(--ink-2); }
+  .daylabel.today .dl-main { color: var(--accent-deep); }
+  .daylabel.overdue .dl-main { color: oklch(0.56 0.10 62); }
+  .overdue-group .task { opacity: 0.82; }
+  .overdue-group .ttext { color: var(--ink-2); }
+  .daylabel .dl-date { font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink-3); }
+
+  .task { display: flex; gap: 13px; align-items: flex-start; padding: 13px 6px; border-bottom: 1px solid var(--line); transition: background .12s; position: relative; }
+  .task:hover { background: oklch(0.27 0.012 70 / 0.018); }
+  .check { width: 22px; height: 22px; border-radius: 999px; border: 1.7px solid var(--line-2); flex: none; margin-top: 1px; display: grid; place-items: center; transition: background .15s, border-color .15s, transform .12s; color: transparent; padding: 0; }
+  .check:hover { border-color: var(--accent); }
+  .check:active { transform: scale(0.92); }
+  .check.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .check.done svg { transform: translateX(0.3px); }
+  .tbody { flex: 1; min-width: 0; }
+  .ttext { font-size: 15.5px; line-height: 1.4; color: var(--ink); word-wrap: break-word; }
+  .task.is-done .ttext { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--ink-3); }
+  .tmeta { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 8px; }
+  .tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 7px; letter-spacing: 0.1px; }
+  .due-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
+  .due-chip svg { opacity: .6; }
+  .rec-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--accent-deep); }
+  .tdel { margin-left: auto; opacity: 0; color: var(--ink-3); padding: 4px; border-radius: 8px; transition: .12s; align-self: center; }
+  .task:hover .tdel { opacity: 1; }
+  .tdel:hover { color: oklch(0.55 0.16 25); background: oklch(0.55 0.16 25 / 0.08); }
+  .grip { position: absolute; left: -15px; top: 19px; display: flex; color: var(--ink-3); opacity: 0; cursor: grab; transition: opacity .12s; }
+  .task:hover .grip { opacity: 0.5; }
+  .grip:active { cursor: grabbing; }
+  .task.dragging { opacity: 0.4; }
+  .task.drop-before::before { content: ''; position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: var(--accent); border-radius: 2px; }
+  .task.drop-after::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px; }
+
+  /* empty */
+  .empty { text-align: center; padding: 64px 20px; color: var(--ink-3); }
+  .empty .ei { width: 46px; height: 46px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin: 0 auto 16px; }
+  .empty h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: var(--ink-2); }
+  .empty p { margin: 0; font-size: 13.5px; line-height: 1.5; max-width: 340px; margin: 0 auto; }
+
+  /* review panel */
+  .scrim { position: fixed; inset: 0; background: oklch(0.2 0.01 70 / 0.32); backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 40px 18px; z-index: 50; overflow-y: auto; animation: fade .18s ease; }
+  @keyframes fade { from { opacity: 0; } }
+  .sheet { background: var(--bg); width: 100%; max-width: 560px; border-radius: 20px; box-shadow: 0 24px 70px oklch(0.2 0.02 70 / 0.28); overflow: hidden; position: relative; animation: rise .22s cubic-bezier(.2,.8,.2,1); }
+  .sheet-x { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: var(--ink-3); font-size: 21px; line-height: 1; z-index: 3; transition: .12s; }
+  .sheet-x:hover { background: var(--line); color: var(--ink); }
+  @keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+  .sheet-h { padding: 20px 22px 16px; border-bottom: 1px solid var(--line); }
+  .sheet-h .k { font-size: 11.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--accent-deep); }
+  .sheet-h h2 { margin: 6px 0 0; font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+  .sheet-h p { margin: 5px 0 0; font-size: 13px; color: var(--ink-2); }
+  .sheet-b { padding: 8px 22px 4px; max-height: 52vh; overflow-y: auto; }
+  .draft { border: 1px solid var(--line-2); border-radius: 14px; padding: 14px; margin: 14px 0; background: var(--surface); }
+  .draft textarea { width: 100%; border: none; outline: none; resize: none; font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--ink); background: none; display: block; }
+  .draft .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ink-3); }
+  .field input, .field select { border: 1px solid var(--line-2); border-radius: 9px; padding: 0 9px; height: 38px; font-size: 13px; color: var(--ink); background: var(--surface); outline: none; box-sizing: border-box; }
+  .draft.edit-module textarea { background: oklch(0.965 0.006 80); border: 1px solid var(--line-2); border-radius: 11px; padding: 12px 13px; font-size: 17.5px; font-weight: 700; line-height: 1.3; transition: border-color .12s, background .12s; }
+  .draft.edit-module textarea:hover { border-color: var(--ink-3); }
+  .draft.edit-module textarea:focus { border-color: var(--accent-line); background: var(--surface); }
+  .field input:focus, .field select:focus { border-color: var(--accent-line); }
+  .catpick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .catopt { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 7px; border: 1px solid var(--line-2); color: var(--ink-3); background: var(--surface); transition: .12s; }
+  .draft .draft-del { float: right; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+  .draft .draft-del:hover { color: oklch(0.55 0.16 25); }
+  .draft-x { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: var(--ink-3); font-size: 17px; line-height: 1; z-index: 2; }
+  .draft-x:hover { background: var(--line); color: var(--ink); }
+  .sheet-f { padding: 16px 22px 20px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); }
+  .btn { padding: 12px 18px; border-radius: 11px; font-size: 14px; font-weight: 700; transition: .15s; }
+  .btn-primary { background: var(--accent); color: #fff; flex: 1; box-shadow: 0 3px 10px oklch(0.56 0.07 152 / 0.25); }
+  .btn-primary:hover { background: var(--accent-deep); }
+  .btn-primary:disabled { opacity: .5; cursor: default; }
+  .btn-ghost { color: var(--ink-2); }
+  .btn-ghost:hover { color: var(--ink); }
+
+  /* calendar stub popover */
+  .pop { position: absolute; top: 64px; right: 22px; width: 290px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; box-shadow: 0 20px 50px oklch(0.2 0.02 70 / 0.18); padding: 18px; z-index: 40; animation: rise .18s ease; }
+  .pop h4 { margin: 0 0 8px; font-size: 14.5px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .pop p { margin: 0 0 14px; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); }
+  .pop .stub-note { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--ink-3); background: var(--line); display: inline-block; padding: 3px 8px; border-radius: 6px; margin-bottom: 12px; }
+  .pop .connect { width: 100%; padding: 11px; border-radius: 11px; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 13.5px; }
+  .pop .connect.on { background: var(--accent); }
+  .gcal-mini { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px dashed var(--line-2); border-radius: 11px; margin-bottom: 14px; }
+  .gcal-mini .g { width: 30px; height: 30px; border-radius: 8px; background: repeating-linear-gradient(45deg, var(--line), var(--line) 5px, transparent 5px, transparent 10px); display: grid; place-items: center; font-weight: 800; color: var(--ink-3); font-size: 13px; flex: none; }
+  .gcal-mini .gm-t { font-size: 12.5px; font-weight: 700; word-break: break-all; }
+  .gcal-mini .gm-s { font-size: 11px; color: var(--ink-3); }
+
+  .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); font-size: 13.5px; font-weight: 600; padding: 12px 18px; border-radius: 100px; box-shadow: 0 10px 30px oklch(0.2 0.02 70 / 0.3); z-index: 60; animation: rise .2s ease; display: flex; align-items: center; gap: 12px; }
+  .toast .u { color: oklch(0.72 0.07 152); font-weight: 700; cursor: pointer; }
+
+  @media (max-width: 560px){
+    .wrap { padding: 26px 16px 120px; }
+    .pop { right: 16px; left: 16px; width: auto; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+/* ============ category system ============ */
+const CATS = ['Home','Work','Ideas','Medical','Fitness','Groceries','Family'];
+const HUE = { Medical:25, Groceries:62, Ideas:95, Fitness:150, Home:196, Work:258, Family:322 };
+function tagStyle(cat){
+  const h = HUE[cat] ?? 70;
+  return {
+    background: `oklch(0.6 0.13 ${h} / 0.16)`,
+    color: `oklch(0.45 0.11 ${h})`,
+    border: `1px solid oklch(0.6 0.13 ${h} / 0.30)`,
+  };
+}
+function catOptStyle(cat, on){ return on ? tagStyle(cat) : {}; }
+
+/* ============ date helpers ============ */
+const DAYNAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function iso(d){ const x = startOfDay(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; }
+function fromIso(s){ const [y,m,dd]=s.split('-').map(Number); return new Date(y, m-1, dd); }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function dayDiff(aIso){ return Math.round((startOfDay(fromIso(aIso)) - startOfDay(new Date()))/86400000); }
+function longDate(aIso){ const d = fromIso(aIso); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; }
+function relLabel(aIso){
+  const diff = dayDiff(aIso);
+  const d = fromIso(aIso);
+  const md = longDate(aIso);
+  let sub = DAYNAMES[d.getDay()], cls='';
+  if(diff<0){ sub='Overdue'; cls='overdue'; }
+  else if(diff===0){ sub='Today'; cls='today'; }
+  else if(diff===1){ sub='Tomorrow'; }
+  return { main: md, cls, date: sub };
+}
+function archLabel(aIso){
+  const diff = dayDiff(aIso);
+  if(diff===0) return { main:'Today', cls:'', date: longDate(aIso) };
+  if(diff===-1) return { main:'Yesterday', cls:'', date: longDate(aIso) };
+  return { main: longDate(aIso), cls:'', date:'' };
+}
+function fmtTime(t){ if(!t) return null; const [h,m]=t.split(':').map(Number); const ap=h>=12?'pm':'am'; const hh=((h+11)%12)+1; return m? `${hh}:${String(m).padStart(2,'0')} ${ap}` : `${hh} ${ap}`; }
+function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+/* ============ icons ============ */
+const I = {
+  mic:(p)=>(<svg width={p?.s||20} height={p?.s||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>),
+  check:(p)=>(<svg width={(p&&p.s)||13} height={Math.round(((p&&p.s)||13)*0.74)} viewBox="0 0 14 10.4" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><path d="M1.6 5.7L5.4 9.2L12.4 1.5"/></svg>),
+  repeat:(p)=>(<svg width={p?.s||12} height={p?.s||12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>),
+  cal:(p)=>(<svg width={p?.s||13} height={p?.s||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>),
+  clock:(p)=>(<svg width={p?.s||12} height={p?.s||12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>),
+  trash:(p)=>(<svg width={p?.s||15} height={p?.s||15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>),
+  inbox:(p)=>(<svg width={p?.s||22} height={p?.s||22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>),
+  grip:(p)=>(<svg width={(p&&p.s)||14} height={(p&&p.s)||14} viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>),
+  plus:(p)=>(<svg width={(p&&p.s)||20} height={(p&&p.s)||20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>),
+};
+
+/* ============ parsing ============ */
+const PARSE_PROMPT = (todayIso, note) => `Today is ${todayIso}. Convert this note into to-do tasks as a JSON array. Split lists (e.g. groceries, errands) into separate tasks. Pick 0+ categories per task from: ${CATS.join(', ')}. due = YYYY-MM-DD only if a day is implied, else null. time = HH:MM only if stated, else null. recurring = Daily/Weekly/Monthly or null. No em dashes. Output ONLY a JSON array like [{"text":"","categories":[],"due":null,"time":null,"recurring":null}]
+Note: "${note}"`;
+
+// Endpoint resolution: a deployed backend (Replit/serverless) sets this so the
+// API key stays server-side. Read from a <meta> tag or window global; if neither
+// is present we skip the network call entirely (no doomed requests on static hosts).
+function parseEndpoint(){
+  if (typeof window.EASE_PARSE_URL === 'string' && window.EASE_PARSE_URL) return window.EASE_PARSE_URL;
+  const m = document.querySelector('meta[name="ease-parse-endpoint"]');
+  return m && m.content ? m.content : '';
+}
+async function parseTasks(input){
+  const today = iso(new Date());
+  // 1) Deployed backend proxy (recommended for hosting) — keeps your key secret.
+  const url = parseEndpoint();
+  if (url){
+    try {
+      const res = await fetch(url, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ input, today }),
+      });
+      if (res.ok){
+        const data = await res.json();
+        const arr = Array.isArray(data) ? data : extractJson(typeof data==='string'? data : (data.text || data.content || ''));
+        if (Array.isArray(arr) && arr.length) return arr.map(normalizeDraft).filter(d=>d.text);
+      }
+    } catch(e){ /* fall through */ }
+  }
+  // 2) In-workspace helper (this preview only).
+  if (window.claude && typeof window.claude.complete === 'function'){
+    try {
+      const raw = await window.claude.complete({ messages: [{ role:'user', content: PARSE_PROMPT(today, input) }] });
+      const arr = extractJson(raw);
+      if (Array.isArray(arr) && arr.length) return arr.map(normalizeDraft).filter(d=>d.text);
+    } catch(e){ /* fall through */ }
+  }
+  // 3) Offline keyword parser — always works, no network.
+  return heuristic(input);
+}
+function extractJson(s){
+  if(!s) return null;
+  let t = String(s).trim();
+  const fence = t.match(/```(?:json)?([\s\S]*?)```/i); if(fence) t = fence[1].trim();
+  const a = t.indexOf('['), b = t.lastIndexOf(']');
+  if(a!==-1 && b!==-1) t = t.slice(a,b+1);
+  try { return JSON.parse(t); } catch(e){ return null; }
+}
+function normalizeDraft(d){
+  return {
+    id: uid(),
+    text: (d.text||'').trim(),
+    categories: Array.isArray(d.categories) ? d.categories.filter(c=>CATS.includes(c)) : [],
+    due: d.due && /^\d{4}-\d{2}-\d{2}$/.test(d.due) ? d.due : '',
+    time: d.time && /^\d{1,2}:\d{2}$/.test(d.time) ? d.time : '',
+    recurring: ['Daily','Weekly','Monthly'].includes(d.recurring) ? d.recurring : '',
+  };
+}
+function heuristic(input){
+  let s = (input||'').trim(); if(!s) return [];
+  let due='', time='', recurring='';
+  const low = s.toLowerCase();
+  if(/\btomorrow\b/.test(low)) due = iso(addDays(new Date(),1));
+  else if(/\btoday\b|\btonight\b/.test(low)) due = iso(new Date());
+  else { const wd = DAYNAMES.findIndex(d=> low.includes(d.toLowerCase())); if(wd>=0){ const t=new Date(); let add=(wd-t.getDay()+7)%7; if(add===0) add=7; due = iso(addDays(t,add)); } }
+  if(/every day|daily/.test(low)) recurring='Daily';
+  else if(/every week|weekly/.test(low)) recurring='Weekly';
+  else if(/every month|monthly/.test(low)) recurring='Monthly';
+  const tm = low.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/);
+  if(tm){ let h=(+tm[1])%12; if(tm[3]==='pm') h+=12; time=`${String(h).padStart(2,'0')}:${tm[2]||'00'}`; }
+  const KW = { milk:'Groceries', egg:'Groceries', bread:'Groceries', grocer:'Groceries', spinach:'Groceries', doctor:'Medical', pharmacy:'Medical', refill:'Medical', dentist:'Medical', gym:'Fitness', run:'Fitness', walk:'Fitness', workout:'Fitness', meeting:'Work', email:'Work', report:'Work', mom:'Family', dad:'Family', birthday:'Family', clean:'Home', paint:'Home', idea:'Ideas', read:'Ideas' };
+  let body = s.replace(/^(remind me to|i need to|i want to|need to|remember to|add|todo:?)\s*/i,'');
+  let parts = body.split(/,|\band\b|;|\bthen\b/i).map(p=>p.trim()).filter(Boolean);
+  if(parts.length<2) parts=[body.trim()];
+  return parts.map(p=>{
+    const pl=p.toLowerCase(); const cats=[];
+    for(const k in KW){ if(pl.includes(k) && !cats.includes(KW[k])) cats.push(KW[k]); }
+    return normalizeDraft({ text: p.charAt(0).toUpperCase()+p.slice(1), categories:cats, due, time, recurring });
+  });
+}
+
+/* ============ seed + storage ============ */
+function seed(){
+  const t = new Date();
+  const d0=iso(t), d1=iso(addDays(t,1)), d3=iso(addDays(t,3));
+  const mk = (o)=>({ id: uid(), categories:[], due:'', time:'', recurring:'', done:false, createdAt: Date.now(), completedAt:null, ...o });
+  return [
+    mk({ text:'Call pharmacy about the refill', categories:['Medical'], due:d0 }),
+    mk({ text:'Write standup notes for sprint review', categories:['Work'], due:d0, time:'09:00', recurring:'Weekly' }),
+    mk({ text:'Stretch and a 20 minute walk', categories:['Fitness'], due:d0, time:'18:00', recurring:'Daily' }),
+    mk({ text:'Oat milk', categories:['Groceries'], due:d1 }),
+    mk({ text:'Eggs', categories:['Groceries'], due:d1 }),
+    mk({ text:'Spinach', categories:['Groceries'], due:d1 }),
+    mk({ text:'Physio appointment', categories:['Medical','Fitness'], due:d3, time:'14:00' }),
+    mk({ text:'Order flowers for Mom\u2019s birthday', categories:['Family'], due:d3 }),
+    mk({ text:'Try the new river trail loop', categories:['Fitness','Ideas'] }),
+    mk({ text:'Repaint the hallway a warmer white', categories:['Home'] }),
+    mk({ text:'Read that systems thinking book', categories:['Ideas'] }),
+    mk({ text:'Build the garden moisture sensor', categories:['Ideas','Home'] }),
+    mk({ text:'Renew gym membership', categories:['Fitness'], done:true, completedAt: addDays(t,-1).getTime() }),
+    mk({ text:'Submit expense report', categories:['Work'], done:true, completedAt: addDays(t,-2).getTime() }),
+  ];
+}
+const LS='ease.tasks.v1';
+function chrono(a,b){ const at=a.time||'~', bt=b.time||'~'; if(at!==bt) return at<bt?-1:1; return (a.createdAt||0)-(b.createdAt||0); }
+function renumberDay(list, day){
+  if(!day) return list;
+  const g=list.filter(x=>x.due===day).slice().sort(chrono);
+  const om={}; g.forEach((t,i)=> om[t.id]=i);
+  return list.map(t=> (om[t.id]!=null)? {...t, ord:om[t.id]} : t);
+}
+function ensureOrd(list){
+  const byDay={};
+  list.forEach(t=>{ const k=t.due||'__none__'; (byDay[k]=byDay[k]||[]).push(t); });
+  Object.keys(byDay).forEach(day=>{
+    const g=byDay[day];
+    const miss=g.filter(t=>typeof t.ord!=='number');
+    if(!miss.length) return;
+    let max=g.reduce((m,t)=> typeof t.ord==='number'? Math.max(m,t.ord): m, -1);
+    miss.slice().sort(chrono).forEach(t=> t.ord=++max);
+  });
+  return list;
+}
+function loadTasks(){
+  let arr=null;
+  try{ const r=localStorage.getItem(LS); if(r) arr=JSON.parse(r); }catch(e){}
+  if(!arr) arr=seed();
+  ensureOrd(arr);
+  try{ localStorage.setItem(LS, JSON.stringify(arr)); }catch(e){}
+  return arr;
+}
+function advance(dueIso, rec){
+  const d = fromIso(dueIso);
+  if(rec==='Daily') return iso(addDays(d,1));
+  if(rec==='Weekly') return iso(addDays(d,7));
+  if(rec==='Monthly'){ const x=new Date(d); x.setMonth(x.getMonth()+1); return iso(x); }
+  return dueIso;
+}
+
+/* ============ components ============ */
+function Tag({ c, onClick }){ return <span className={'tag'+(onClick?' tag-btn':'')} style={tagStyle(c)} onClick={onClick? (e)=>{ e.stopPropagation(); onClick(c); } : undefined}>{c}</span>; }
+
+function TaskRow({ t, onToggle, onDelete, onEdit, onTagClick, dnd }){
+  const cls = 'task'+(t.done?' is-done':'')+(dnd&&dnd.dragging?' dragging':'')+(dnd&&dnd.dropBefore?' drop-before':'')+(dnd&&dnd.dropAfter?' drop-after':'');
+  return (
+    <div className={cls}
+      draggable={dnd? dnd.draggable : undefined}
+      onDragStart={dnd? dnd.onDragStart : undefined}
+      onDragOver={dnd? dnd.onDragOver : undefined}
+      onDrop={dnd? dnd.onDrop : undefined}
+      onDragEnd={dnd? dnd.onDragEnd : undefined}>
+      {dnd && dnd.draggable && <span className="grip" aria-hidden="true"><I.grip s={14} /></span>}
+      <button className={'check'+(t.done?' done':'')} onClick={()=>onToggle(t.id)} aria-label="complete">{t.done && <I.check s={13} />}</button>
+      <div className="tbody" onClick={()=> onEdit && onEdit(t)}>
+        <div className="ttext">{t.text}</div>
+        <div className="tmeta">
+          {t.categories.map(c=> <Tag c={c} key={c} onClick={onTagClick} />)}
+          {t.time && <span className="due-chip"><I.clock s={12} /> {fmtTime(t.time)}</span>}
+          {t.recurring && <span className="rec-chip"><I.repeat s={11} /> {t.recurring}</span>}
+        </div>
+      </div>
+      <button className="tdel" onClick={(e)=>{ e.stopPropagation(); onDelete(t.id); }} aria-label="delete"><I.trash s={15} /></button>
+    </div>
+  );
+}
+
+function DayGroup({ label, tasks, onToggle, onDelete, onEdit, onTagClick, makeDnd, onAdd, overdue }){
+  return (
+    <div className={'daygroup'+(overdue?' overdue-group':'')}>
+      <div className={'daylabel '+label.cls}>
+        <span className="dl-main">{label.main}</span>
+        {label.date && <span className="dl-date">{label.date}</span>}
+      </div>
+      {tasks.map(t=> <TaskRow key={t.id} t={t} onToggle={onToggle} onDelete={onDelete} onEdit={onEdit} onTagClick={onTagClick} dnd={makeDnd? makeDnd(t) : undefined} />)}
+      {onAdd && <button className="dayadd" onClick={onAdd}><I.plus s={13} /> Add</button>}
+    </div>
+  );
+}
+
+function DraftFields({ d, update, toggleCat }){
+  return (
+    <React.Fragment>
+      <textarea rows={1} value={d.text} onChange={e=>update({text:e.target.value})}
+        ref={el=>{ if(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; } }} placeholder="Task…" />
+      <div className="catpick">
+        {CATS.map(c=> (
+          <button key={c} className="catopt" style={catOptStyle(c, d.categories.includes(c))} onClick={()=>toggleCat(c)}>{c}</button>
+        ))}
+      </div>
+      <div className="row">
+        <div className="field"><label>Due date</label><input type="date" value={d.due} onChange={e=>update({due:e.target.value})} /></div>
+        <div className="field"><label>Time</label><input type="time" value={d.time} onChange={e=>update({time:e.target.value})} /></div>
+        <div className="field"><label>Repeat</label>
+          <select value={d.recurring} onChange={e=>update({recurring:e.target.value})}>
+            <option value="">Never</option><option value="Daily">Daily</option><option value="Weekly">Weekly</option><option value="Monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+function EditSheet({ task, onSave, onDelete, onClose }){
+  const [d, setD] = useState(()=>({ id:task.id, text:task.text, categories:[...(task.categories||[])], due:task.due||'', time:task.time||'', recurring:task.recurring||'' }));
+  const update = (patch)=> setD(x=>({...x, ...patch}));
+  const toggleCat = (c)=> setD(x=>({...x, categories: x.categories.includes(c)? x.categories.filter(y=>y!==c) : [...x.categories, c]}));
+  useEffect(()=>{ const h=(e)=>{ if(e.key==='Escape') onClose(); }; window.addEventListener('keydown', h); return ()=>window.removeEventListener('keydown', h); }, [onClose]);
+  return (
+    <div className="scrim" onMouseDown={(e)=>{ if(e.target.classList.contains('scrim')) onClose(); }}>
+      <div className="sheet">
+        <button className="sheet-x" onClick={onClose} aria-label="close">&times;</button>
+        <div className="sheet-b" style={{paddingTop:44}}>
+          <div className="draft edit-module" style={{border:'none', background:'none', padding:0, margin:'2px 0 0'}}><DraftFields d={d} update={update} toggleCat={toggleCat} /></div>
+        </div>
+        <div className="sheet-f">
+          <button className="btn btn-danger" onClick={()=>onDelete(task.id)}>Delete</button>
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={()=>onSave(d)} disabled={!d.text.trim()}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Empty({ icon, title, sub }){
+  return (<div className="empty"><div className="ei">{icon}</div><h3>{title}</h3><p>{sub}</p></div>);
+}
+
+function ReviewSheet({ drafts, setDrafts, onConfirm, onClose }){
+  const update = (id, patch)=> setDrafts(ds=> ds.map(d=> d.id===id ? {...d, ...patch} : d));
+  const remove = (id)=> setDrafts(ds=> ds.filter(d=> d.id!==id));
+  const toggleCat = (id, c)=> setDrafts(ds=> ds.map(d=> d.id===id ? {...d, categories: d.categories.includes(c)? d.categories.filter(x=>x!==c) : [...d.categories, c]} : d));
+  useEffect(()=>{ const h=(e)=>{ if(e.key==='Escape') onClose(); }; window.addEventListener('keydown', h); return ()=>window.removeEventListener('keydown', h); }, [onClose]);
+  const n = drafts.length;
+  const multi = n>1;
+  const canAdd = drafts.some(d=>d.text.trim());
+  return (
+    <div className="scrim" onMouseDown={(e)=>{ if(e.target.classList.contains('scrim')) onClose(); }}>
+      <div className="sheet">
+        <button className="sheet-x" onClick={onClose} aria-label="close">&times;</button>
+        <div className="sheet-b" style={{paddingTop:44}}>
+          {drafts.map((d,i)=> (
+            <div className="draft edit-module" key={d.id}
+              style={{ background:'none', position:'relative',
+                border: multi? '1px solid var(--line-2)' : 'none',
+                borderRadius: multi? 14 : 0,
+                padding: multi? '14px' : 0,
+                margin: i? '12px 0 0' : '2px 0 0' }}>
+              {multi && <button className="draft-x" onClick={()=>remove(d.id)} aria-label="remove">&times;</button>}
+              <DraftFields d={d} update={(patch)=>update(d.id,patch)} toggleCat={(c)=>toggleCat(d.id,c)} />
+            </div>
+          ))}
+        </div>
+        <div className="sheet-f">
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={onConfirm} disabled={!canAdd}>{multi? `Add ${n} tasks` : 'Add task'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Capture({ onDrafts, onManual }){
+  const [text, setText] = useState('');
+  const [phase, setPhase] = useState('idle'); // idle | recording | parsing
+  const [live, setLive] = useState('');
+  const [err, setErr] = useState('');
+  const recRef = useRef(null);
+  const supportsSR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  function runParse(input){
+    if(!input.trim()) return;
+    setPhase('idle'); setLive(''); setText('');
+    let quick=[];
+    try{ quick = heuristic(input); }catch(e){ quick=[]; }
+    if(!quick.length) quick = [{ id: uid(), text: input.trim(), categories:[], due:'', time:'', recurring:'' }];
+    onDrafts(quick, input);
+  }
+
+  function startRec(){
+    if(!supportsSR){ document.getElementById('cap-input')?.focus(); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const r = new SR(); r.lang='en-US'; r.interimResults=true; r.continuous=true;
+    let finalT='';
+    r.onstart = ()=>{ setErr(''); };
+    r.onresult = (e)=>{ let interim=''; for(let i=e.resultIndex;i<e.results.length;i++){ const tr=e.results[i]; if(tr.isFinal) finalT+=tr[0].transcript; else interim+=tr[0].transcript; } setLive((finalT+' '+interim).trim()); };
+    r.onerror = (e)=>{ if(recRef.current){ recRef.current=null; setPhase('idle'); } const code=e&&e.error; setErr(code==='no-speech'? 'Did not catch that. Try again, or type it.' : 'Microphone is blocked in this preview. Type your task, or open Ease in its own browser tab.'); };
+    r.onend = ()=>{ if(recRef.current){ recRef.current=null; setPhase('idle'); const said=finalT.trim(); if(said) runParse(said); else setLive(''); } };
+    recRef.current = r; setPhase('recording'); setLive(''); try{ r.start(); }catch(e){ recRef.current=null; setPhase('idle'); }
+  }
+  function stopRec(cancel){
+    const r = recRef.current; if(!r) return;
+    if(cancel){ recRef.current=null; r.onend=null; try{ r.stop(); }catch(e){} setPhase('idle'); setLive(''); return; }
+    try{ r.stop(); }catch(e){}
+  }
+  function micDown(){
+    if(phase!=='idle') return;
+    if(!supportsSR){ setErr('Voice input is not supported in this browser. Type your task instead.'); document.getElementById('cap-input')?.focus(); return; }
+    startRec();
+    const up=()=>{ window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); stopRec(false); };
+    window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up);
+  }
+
+  return (
+    <div>
+      <div className="capture">
+        <input id="cap-input" value={text}
+          placeholder={supportsSR? 'Hold the mic to speak, or type a task\u2026' : 'Type in plain words, e.g. \u201cdentist friday 3pm\u201d'}
+          onChange={e=>setText(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') runParse(text); }} disabled={phase!=='idle'} />
+        <button className="cap-add" onClick={onManual} aria-label="add a task by hand" title="Add a task by hand"><I.plus s={20} /></button>
+        <button className={'mic'+(phase==='recording'?' rec':'')} onPointerDown={(e)=>{ e.preventDefault(); micDown(); }} onContextMenu={(e)=>e.preventDefault()} aria-label="hold to speak"><I.mic s={20} /></button>
+      </div>
+
+      {phase==='idle' && err && <div className="cap-hint" style={{color:'oklch(0.56 0.13 45)'}}>{err}</div>}
+      {phase==='recording' && (
+        <div className="reclive">
+          <div className="lbl"><span className="bigwave"><span></span><span></span><span></span><span></span><span></span></span> Listening, release to sort</div>
+          <div className={'txt'+(live?'':' ph')}>{live || 'Keep holding and say what you need to do\u2026 e.g. \u201cgrab milk, eggs and spinach tomorrow, and call the dentist friday at 3\u201d'}</div>
+          <button className="rec-stop" onClick={()=>stopRec(false)}>Release to sort</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============ app ============ */
+function App(){
+  const [tasks, setTasks] = useState(loadTasks);
+  const [tab, setTab] = useState('timeline');
+  const [drafts, setDrafts] = useState(null);
+  const [calOpen, setCalOpen] = useState(false);
+  const [calConnected, setCalConnected] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [filterCat, setFilterCat] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [recentDone, setRecentDone] = useState([]);
+  const [drag, setDrag] = useState(null);
+  const [dropT, setDropT] = useState(null);
+  const lastDeleted = useRef(null);
+  const refineRef = useRef(null);
+
+  useEffect(()=>{ try{ localStorage.setItem(LS, JSON.stringify(tasks)); }catch(e){} }, [tasks]);
+  useEffect(()=>{ if(!toast) return; const id=setTimeout(()=>setToast(null), 4200); return ()=>clearTimeout(id); }, [toast]);
+
+  const active = tasks.filter(t=>!t.done);
+  const done = tasks.filter(t=>t.done).sort((a,b)=> (b.completedAt||0)-(a.completedAt||0));
+  const fmatch = (t)=> !filterCat || (t.categories||[]).includes(filterCat);
+  // a just-completed task stays visible (checked + greyed) in its pane until you switch tabs
+  const stillHere = (t)=> !t.done || recentDone.includes(t.id);
+  const dated = tasks.filter(t=> t.due && stillHere(t)).sort((a,b)=>{
+    if(a.due!==b.due) return a.due.localeCompare(b.due);
+    return (a.ord??a.createdAt??0)-(b.ord??b.createdAt??0);
+  });
+  const undated = tasks.filter(t=> !t.due && stillHere(t)).sort((a,b)=>(a.ord??a.createdAt??0)-(b.ord??b.createdAt??0));
+  const datedF = dated.filter(fmatch), undatedF = undated.filter(fmatch), doneF = done.filter(fmatch);
+  const cTimeline = active.filter(t=>t.due && fmatch(t)).length;
+  const cIdeas = active.filter(t=>!t.due && fmatch(t)).length;
+
+  function toggle(id){
+    const cur = tasks.find(x=>x.id===id);
+    setTasks(ts=> ts.map(x=>{
+      if(x.id!==id) return x;
+      if(x.done){
+        // uncompleting: if it had no due date, fall back to the day it was completed so it reads as overdue
+        const due = x.due || (x.completedAt? iso(new Date(x.completedAt)) : '');
+        return {...x, done:false, completedAt:null, due};
+      }
+      return {...x, done:true, completedAt:Date.now()};
+    }));
+    setRecentDone(prev=> (cur && !cur.done) ? (prev.includes(id)?prev:[...prev,id]) : prev.filter(x=>x!==id));
+    if(cur && cur.done && tab==='archive'){
+      const resultingDue = cur.due || (cur.completedAt? iso(new Date(cur.completedAt)) : '');
+      const dest = resultingDue? 'timeline' : 'ideas';
+      setTab(dest);
+      const od = resultingDue && resultingDue < iso(new Date());
+      setToast({ msg: `Back in ${dest==='timeline'? (od?'Timeline as overdue':'Timeline') : 'Someday'}`, undo:false });
+    }
+  }
+  function del(id){ lastDeleted.current = tasks.find(x=>x.id===id); setTasks(ts=>ts.filter(x=>x.id!==id)); setToast({ msg:'Task deleted', undo:true }); }
+  function undo(){ if(lastDeleted.current){ const t=lastDeleted.current; lastDeleted.current=null; setTasks(ts=>[...ts, t]); setToast(null); } }
+  function saveEdit(d){
+    setTasks(ts=>{
+      const old=ts.find(x=>x.id===d.id);
+      let next=ts.map(x=> x.id===d.id? {...x, text:d.text.trim(), categories:d.categories, due:d.due||'', time:d.time||'', recurring:d.recurring||''} : x);
+      if(old && (old.due!==(d.due||'') || old.time!==(d.time||''))){
+        if(old.due) next=renumberDay(next, old.due);
+        if(d.due) next=renumberDay(next, d.due);
+      }
+      return next;
+    });
+    setEditing(null); setToast({ msg:'Task updated', undo:false });
+  }
+  function deleteFromEdit(id){ setEditing(null); del(id); }
+  function openManual(due){ setDrafts([{ id: uid(), text:'', categories:[], due: due||'', time:'', recurring:'' }]); }
+  function onCaptureDrafts(seeded, rawInput){
+    setDrafts(seeded);
+    if(rawInput){
+      refineRef.current = JSON.stringify(seeded);
+      parseTasks(rawInput).then(ai=>{
+        if(ai && ai.length){
+          const aiKey=JSON.stringify(ai);
+          setDrafts(cur=>{ if(cur && JSON.stringify(cur)===refineRef.current){ refineRef.current=aiKey; return ai; } return cur; });
+        }
+      }).catch(()=>{});
+    }
+  }
+  function applyDrop(dragId, targetId, place){
+    setTasks(ts=>{
+      const tgt=ts.find(x=>x.id===targetId); const dragged=ts.find(x=>x.id===dragId);
+      if(!tgt||!dragged) return ts;
+      const day=tgt.due;
+      const dayList=ts.filter(x=>!x.done && x.due===day && x.id!==dragId).slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
+      let idx=dayList.findIndex(x=>x.id===targetId);
+      if(idx<0) idx=dayList.length; else if(place==='after') idx+=1;
+      dayList.splice(idx,0,dragged);
+      const om={}; dayList.forEach((x,i)=> om[x.id]=i);
+      return ts.map(x=> x.id===dragId? {...x, due:day, ord:om[x.id]} : (om[x.id]!=null? {...x, ord:om[x.id]} : x));
+    });
+  }
+  function timedOrderValid(dragId, targetId, place, day){
+    const dragged=tasks.find(x=>x.id===dragId);
+    const dayList=tasks.filter(x=>!x.done && x.due===day && x.id!==dragId).slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
+    let idx=dayList.findIndex(x=>x.id===targetId);
+    if(idx<0) idx=dayList.length; else if(place==='after') idx+=1;
+    dayList.splice(idx,0,dragged);
+    const timed=dayList.filter(x=>x.time);
+    for(let i=1;i<timed.length;i++){ if(timed[i].time < timed[i-1].time) return false; }
+    return true;
+  }
+  function onDragOverTask(e, t){
+    if(!drag || t.done) return;
+    e.preventDefault();
+    const r=e.currentTarget.getBoundingClientRect();
+    const place=(e.clientY-r.top)>r.height/2?'after':'before';
+    setDropT(p=> (p && p.id===t.id && p.place===place)? p : {id:t.id, place});
+  }
+  function suggestTime(targetDay, targetId, place, draggedId){
+    const dayList=tasks.filter(x=>!x.done && x.due===targetDay && x.id!==draggedId).slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
+    let idx=dayList.findIndex(x=>x.id===targetId);
+    if(idx<0) idx=dayList.length; else if(place==='after') idx+=1;
+    let above=null, below=null;
+    for(let i=idx-1;i>=0;i--){ if(dayList[i].time){ above=dayList[i].time; break; } }
+    for(let i=idx;i<dayList.length;i++){ if(dayList[i].time){ below=dayList[i].time; break; } }
+    const hr=(s)=> parseInt(s.split(':')[0],10);
+    let h=null;
+    if(above!=null) h=Math.min(23, hr(above)+1);
+    else if(below!=null) h=Math.max(0, hr(below)-1);
+    if(h==null) return null;
+    return String(h).padStart(2,'0')+':00';
+  }
+  function onDropTask(e, t){
+    if(!drag) return;
+    e.preventDefault();
+    const dragId=drag.id; const place=(dropT && dropT.id===t.id)? dropT.place : 'before';
+    setDrag(null); setDropT(null);
+    if(dragId===t.id) return;
+    const dragged=tasks.find(x=>x.id===dragId); if(!dragged) return;
+    const targetDay=t.due; const crossDay=dragged.due!==targetDay;
+    if(!dragged.time){ applyDrop(dragId, t.id, place); if(crossDay) setToast({msg:`Moved to ${relLabel(targetDay).main}`, undo:false}); return; }
+    const st = suggestTime(targetDay, t.id, place, dragId);
+    if(crossDay){ setEditing({...dragged, due:targetDay, time: st || dragged.time}); return; }
+    if(timedOrderValid(dragId, t.id, place, targetDay)) applyDrop(dragId, t.id, place);
+    else setEditing({...dragged, time: st || dragged.time});
+  }
+  function endDrag(){ setDrag(null); setDropT(null); }
+  const makeDnd = (t)=>{
+    const can = !t.done;
+    return {
+      draggable: can,
+      onDragStart: can? (e)=>{ try{ e.dataTransfer.setData('text/plain', t.id); e.dataTransfer.effectAllowed='move'; }catch(_){} setDrag({id:t.id, due:t.due, time:t.time}); } : undefined,
+      onDragOver: (e)=>onDragOverTask(e, t),
+      onDrop: (e)=>onDropTask(e, t),
+      onDragEnd: endDrag,
+      dragging: !!(drag && drag.id===t.id),
+      dropBefore: !!(dropT && dropT.id===t.id && dropT.place==='before' && (!drag || drag.id!==t.id)),
+      dropAfter: !!(dropT && dropT.id===t.id && dropT.place==='after' && (!drag || drag.id!==t.id)),
+    };
+  };
+  function changeTab(tb){
+    if(tb!==tab){
+      if(recentDone.length){
+        setTasks(ts=>{
+          const adds=[];
+          ts.forEach(t=>{ if(recentDone.includes(t.id) && t.done && t.recurring && t.due) adds.push({ ...t, id:uid(), done:false, completedAt:null, due:advance(t.due,t.recurring), createdAt:Date.now(), ord:undefined }); });
+          if(!adds.length) return ts;
+          let next=ts.concat(adds);
+          [...new Set(adds.map(a=>a.due))].forEach(day=> next=renumberDay(next, day));
+          return next;
+        });
+      }
+      setRecentDone([]);
+    }
+    setTab(tb);
+  }
+
+  function confirmDrafts(){
+    const add = drafts.filter(d=>d.text.trim()).map(d=>({
+      id: d.id, text: d.text.trim(), categories: d.categories, due: d.due||'', time: d.time||'', recurring: d.recurring||'',
+      done:false, createdAt: Date.now(), completedAt:null,
+    }));
+    if(!add.length){ setDrafts(null); return; }
+    const anyDated = add.some(a=>a.due);
+    setTasks(ts=>{
+      let next=[...add, ...ts];
+      [...new Set(add.filter(a=>a.due).map(a=>a.due))].forEach(day=> next=renumberDay(next, day));
+      return next;
+    });
+    setDrafts(null);
+    setTab(anyDated ? 'timeline' : 'ideas');
+    setToast({ msg: `Added ${add.length} ${add.length===1?'task':'tasks'}`+(calConnected && anyDated?' · synced to Calendar':''), undo:false });
+  }
+
+  const groups = [];
+  datedF.forEach(t=>{ const g=groups.find(g=>g.due===t.due); if(g) g.items.push(t); else groups.push({ due:t.due, items:[t] }); });
+  const arcGroups = [];
+  doneF.forEach(t=>{ const key = t.completedAt? iso(new Date(t.completedAt)) : 'older'; const g=arcGroups.find(g=>g.key===key); if(g) g.items.push(t); else arcGroups.push({ key, items:[t] }); });
+
+  const now = new Date();
+  const todayStr = iso(now);
+  return (
+    <div className="wrap">
+      <div className="hdr">
+        <div className="brand">
+          <div className="mark">Ease</div>
+          <div className="date">{DAYNAMES[now.getDay()]}, {MONTHS[now.getMonth()]} {now.getDate()}</div>
+        </div>
+        <button className={'cal-btn'+(calConnected?' on':'')} onClick={()=>setCalOpen(o=>!o)}>
+          <span className="dotg"></span> {calConnected? 'Calendar synced' : 'Calendar'}
+        </button>
+      </div>
+
+      <Capture onDrafts={onCaptureDrafts} onManual={()=>openManual('')} />
+
+      <div className="tabs">
+        <button className={'tab'+(tab==='timeline'?' on':'')} onClick={()=>changeTab('timeline')}>Timeline <span className="cnt">{cTimeline}</span></button>
+        <button className={'tab'+(tab==='ideas'?' on':'')} onClick={()=>changeTab('ideas')}>Someday <span className="cnt">{cIdeas}</span></button>
+        <button className={'tab'+(tab==='archive'?' on':'')} onClick={()=>changeTab('archive')}>Archive <span className="cnt">{doneF.length}</span></button>
+      </div>
+
+      <div className="filterbar">
+        <button className={'fb-all'+(filterCat?'':' on')} onClick={()=>setFilterCat(null)}>All</button>
+        {CATS.map(c=> (
+          <span key={c} className={'fchip'+(filterCat===c?'':' off')} style={filterCat===c? tagStyle(c) : undefined} onClick={()=>setFilterCat(filterCat===c? null : c)}>{c}</span>
+        ))}
+      </div>
+
+      {tab==='timeline' && (groups.length ? groups.map(g=> (
+        <DayGroup key={g.due} label={relLabel(g.due)} tasks={g.items} onToggle={toggle} onDelete={del} onEdit={setEditing} onTagClick={setFilterCat} makeDnd={makeDnd} onAdd={filterCat? undefined : ()=>openManual(g.due)} overdue={g.due < todayStr} />
+      )) : <Empty icon={<I.cal s={22} />} title={filterCat? `No ${filterCat} tasks scheduled` : 'Nothing scheduled'} sub={filterCat? 'Try another tag, or tap All to clear the filter.' : 'Tasks with a due date show up here, in order. Hold the mic or type one above.'} />)}
+
+      {tab==='ideas' && (
+        <div className="daygroup" style={{marginTop:6}}>
+          {undatedF.length
+            ? undatedF.map(t=> <TaskRow key={t.id} t={t} onToggle={toggle} onDelete={del} onEdit={setEditing} onTagClick={setFilterCat} dnd={makeDnd(t)} />)
+            : <Empty icon={<I.inbox s={22} />} title={filterCat? `No ${filterCat} tasks here` : 'Nothing on the someday list'} sub={filterCat? 'Try another tag, or tap All to clear the filter.' : 'Capture anything without a date: someday plans, things to try, half-formed thoughts.'} />}
+          {!filterCat && <button className="dayadd" onClick={()=>openManual('')}><I.plus s={13} /> Add</button>}
+        </div>
+      )}
+
+      {tab==='archive' && (arcGroups.length ? arcGroups.map(g=> (
+        <DayGroup key={g.key} label={g.key==='older'? {main:'Earlier', cls:'', date:''} : archLabel(g.key)} tasks={g.items} onToggle={toggle} onDelete={del} onEdit={setEditing} onTagClick={setFilterCat} />
+      )) : <Empty icon={<I.check s={20} />} title={filterCat? `No ${filterCat} tasks done yet` : 'Nothing done yet'} sub={filterCat? 'Try another tag, or tap All to clear the filter.' : 'Completed tasks collect here in the order you finished them.'} />)}
+
+      {calOpen && (
+        <div className="pop" onMouseLeave={()=>setCalOpen(false)}>
+          <h4><I.cal s={15} /> Google Calendar</h4>
+          <span className="stub-note">Prototype stub</span>
+          <p>Dated tasks would appear on your calendar, and edits here would sync both ways.</p>
+          <div className="gcal-mini"><div className="g">31</div><div><div className="gm-t">you@gmail.com</div><div className="gm-s">{calConnected? 'Connected · 2-way sync on' : 'Not connected'}</div></div></div>
+          <button className={'connect'+(calConnected?' on':'')} onClick={()=>{ const willConnect=!calConnected; setCalConnected(willConnect); setCalOpen(false); setToast({msg: willConnect?'Calendar connected (stub)':'Calendar disconnected', undo:false}); }}>
+            {calConnected? 'Disconnect' : 'Connect Google Calendar'}
+          </button>
+        </div>
+      )}
+
+      {drafts && <ReviewSheet drafts={drafts} setDrafts={setDrafts} onConfirm={confirmDrafts} onClose={()=>setDrafts(null)} />}
+
+      {editing && <EditSheet task={editing} onSave={saveEdit} onDelete={deleteFromEdit} onClose={()=>setEditing(null)} />}
+
+      {toast && <div className="toast">{toast.msg}{toast.undo && <span className="u" onClick={undo}>Undo</span>}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
