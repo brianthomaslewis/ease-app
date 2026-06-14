@@ -541,7 +541,19 @@ function Capture({ onDrafts, onManual }){
     let finalT='';
     r.onstart = ()=>{ setErr(''); };
     r.onresult = (e)=>{ let interim=''; for(let i=e.resultIndex;i<e.results.length;i++){ const tr=e.results[i]; if(tr.isFinal) finalT+=tr[0].transcript; else interim+=tr[0].transcript; } setLive((finalT+' '+interim).trim()); };
-    r.onerror = (e)=>{ if(recRef.current){ recRef.current=null; setPhase('idle'); } const code=e&&e.error; setErr(code==='no-speech'? 'Did not catch that. Try again, or type it.' : 'Microphone is blocked in this preview. Type your task, or open Ease in its own browser tab.'); };
+    r.onerror = (e)=>{
+      if(recRef.current){ recRef.current=null; setPhase('idle'); }
+      const code=(e&&e.error)||'unknown';
+      if(code==='aborted'){ setErr(''); return; } // benign: released before capture, or a tap instead of a hold
+      const msg={
+        'no-speech': 'Did not catch that. Try again, or type it.',
+        'audio-capture': 'No microphone found. Plug one in, or type your task.',
+        'not-allowed': 'Microphone access is blocked — allow it in your browser, then try again. Or type your task.',
+        'service-not-allowed': 'Microphone access is blocked — allow it in your browser, then try again. Or type your task.',
+        'network': 'Voice needs an internet connection to transcribe. Check your connection, or type your task.',
+      }[code] || ('Voice input failed ('+code+'). Type your task instead.');
+      setErr(msg);
+    };
     r.onend = ()=>{ if(recRef.current){ recRef.current=null; setPhase('idle'); const said=finalT.trim(); if(said) runParse(said); else setLive(''); } };
     recRef.current = r; setPhase('recording'); setLive(''); try{ r.start(); }catch(e){ recRef.current=null; setPhase('idle'); }
   }
