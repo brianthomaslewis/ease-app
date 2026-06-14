@@ -43,7 +43,7 @@ If a Repl ever reports "no workflow configured" or "express missing", open the *
 
 ```bash
 npm install
-ANTHROPIC_API_KEY=sk-ant-... npm start      # http://localhost:3000
+ANTHROPIC_API_KEY=sk-ant-... npm start      # http://localhost:5000
 ```
 
 Set `ANTHROPIC_MODEL` to override the default fast Haiku model.
