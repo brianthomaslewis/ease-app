@@ -10,7 +10,7 @@ app.use(express.json({ limit: '64kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const API_KEY = process.env.ANTHROPIC_API_KEY;            // set this in Replit "Secrets"
-const MODEL   = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest'; // fast + cheap; override if you like
+const MODEL   = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5'; // fast + cheap; override if you like
 
 const CATS = ['Home','Work','Ideas','Medical','Fitness','Groceries','Family'];
 
