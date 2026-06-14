@@ -606,7 +606,7 @@ function Capture({ onDrafts, onManual }){
       {phase==='idle' && err && <div className="cap-hint" style={{color:'oklch(0.56 0.13 45)'}}>{err}</div>}
       {phase==='recording' && (
         <div className="reclive">
-          <div className="lbl"><span className="bigwave"><span></span><span></span><span></span><span></span><span></span></span> Listening\u2026 tap Stop when done</div>
+          <div className="lbl"><span className="bigwave"><span></span><span></span><span></span><span></span><span></span></span> Listening… tap Stop when done</div>
           <div className={'txt'+(live?'':' ph')}>{live || 'Say what you need to do\u2026 e.g. \u201cgrab milk, eggs and spinach tomorrow, and call the dentist friday at 3\u201d'}</div>
           <button className="rec-stop" onClick={()=>stopRec(false)}>Stop &amp; sort</button>
         </div>
